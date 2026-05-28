@@ -2,14 +2,11 @@ import React, { use, useEffect, useRef, useState } from "react";
 import { Hands } from "@mediapipe/hands";
 import { Camera } from "@mediapipe/camera_utils";
 
-
 export default function App() {
-
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const prevPoint = useRef({ x: null, y: null });
   const ctxRef = useRef(null);
-
 
   const [text, setText] = useState("");
   const [color, setColor] = useState("#ff007f");
@@ -18,8 +15,14 @@ export default function App() {
   const lastGestureTime = useRef(0);
   const [currentGesture, setCurrentGesture] = useState("Stop Drawing ✊");
 
-
-  const colors = ["#ff007f", "#ff7f00", "#7fff00", "#00ff7f", "#007fff", "#7f00ff"];
+  const colors = [
+    "#ff007f",
+    "#ff7f00",
+    "#7fff00",
+    "#00ff7f",
+    "#007fff",
+    "#7f00ff",
+  ];
 
   useEffect(() => {
     colorRef.current = color;
@@ -34,7 +37,7 @@ export default function App() {
     // initialize MediaPipe Hands
     const hands = new Hands({
       locateFile: (file) =>
-        `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
     });
 
     hands.setOptions({
@@ -57,21 +60,20 @@ export default function App() {
       fingers.forEach(({ tip, pip }) => {
         if (lm[tip].y < lm[pip].y) extended++;
       });
-      if (lm[4].x < lm[3].x) extended++;  //thumb check
+      if (lm[4].x < lm[3].x) extended++; //thumb check
       return extended >= 4;
     };
 
-
     const isWritingPose = (lm) =>
-      lm[8].y < lm[6].y &&  //index finger
-      lm[12].y > lm[10].y &&  //middle finger
-      lm[16].y > lm[14].y &&  //ring finger
+      lm[8].y < lm[6].y && //index finger
+      lm[12].y > lm[10].y && //middle finger
+      lm[16].y > lm[14].y && //ring finger
       lm[20].y > lm[18].y;
 
     const isTwoFingersUp = (lm) =>
-      lm[8].y < lm[6].y &&  //index finger
-      lm[12].y < lm[10].y &&  //middle finger
-      lm[16].y > lm[14].y &&  //ring finger
+      lm[8].y < lm[6].y && //index finger
+      lm[12].y < lm[10].y && //middle finger
+      lm[16].y > lm[14].y && //ring finger
       lm[20].y > lm[18].y;
 
     hands.onResults((results) => {
@@ -98,8 +100,10 @@ export default function App() {
 
         const smoothFactor = 0.25;
         const prev = prevPoint.current;
-        const smoothX = prev.x === null ? x : prev.x + (x - prev.x) * smoothFactor;
-        const smoothY = prev.y === null ? y : prev.y + (y - prev.y) * smoothFactor;
+        const smoothX =
+          prev.x === null ? x : prev.x + (x - prev.x) * smoothFactor;
+        const smoothY =
+          prev.y === null ? y : prev.y + (y - prev.y) * smoothFactor;
 
         ctx.strokeStyle = colorRef.current;
         ctx.lineWidth = 3;
@@ -128,20 +132,16 @@ export default function App() {
           prevPoint.current = { x: null, y: null };
         }
 
-
         // space gesture - palm open
         if (isPalmOpen(hand) && now - lastGestureTime.current > 1200) {
           setText((t) => t + " ");
           lastGestureTime.current = now;
           prevPoint.current = { x: null, y: null };
         }
-
       } else {
         prevPoint.current = { x: null, y: null };
       }
-
     });
-
 
     if (videoElement) {
       const camera = new Camera(videoElement, {
@@ -153,8 +153,6 @@ export default function App() {
       });
       camera.start();
     }
-
-
   }, [colorIndex, color]);
 
   const clearCanvas = () => {
@@ -163,7 +161,6 @@ export default function App() {
     const canvas = canvasRef.current;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
-
 
   // UI
   return (
@@ -191,37 +188,33 @@ export default function App() {
             className="rounded-xl border-2 border-gray-200 bg-white shadow-lg"
           />
 
-
           {/* Gesture Info */}
-          <div className="absolute bottom-6 left-6 bg-indigo-600 backdrop-blur-md px-6 py-3 rounded-xl text-lg text-white 
-          font-semibold shadow-lg">
+          <div
+            className="absolute bottom-6 left-6 bg-indigo-600 backdrop-blur-md px-6 py-3 rounded-xl text-lg text-white 
+          font-semibold shadow-lg"
+          >
             {currentGesture} <br />
             <span className="text-sm text-white/80">
               ✊ Stop drawing | 👆 Drawing | ✌️ Change color | 🖐️ Space
             </span>
           </div>
 
-
           {/* Clear & Color Info */}
-          <div className="absolute top-6 left-6 w-20 h-8 rounded-xl border-2 border-gray-700 shadow-xl transition-all"
+          <div
+            className="absolute top-6 left-6 w-20 h-8 rounded-xl border-2 border-gray-700 shadow-xl transition-all"
             style={{ backgroundColor: color }}
             title={`Current Color: ${color}`}
           />
 
-          <button onClick={clearCanvas}
+          <button
+            onClick={clearCanvas}
             className="absolute bottom-6 right-6 bg-red-600 hover:bg-red-700 px-6 py-3 rounded-xl text-lg text-white 
           font-semibold shadow-lg transition-all"
           >
             Clear Canvas
           </button>
-
-
         </div>
-
       </div>
-
-
     </div>
   );
-
 }
