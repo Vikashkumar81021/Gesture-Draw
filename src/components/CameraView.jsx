@@ -15,7 +15,8 @@ export default function CameraView({
           muted
           className="
             w-full
-            max-w-[700px]
+            max-w-[400px]
+            z-50
             rounded-2xl
             border border-white/20
             shadow-lg
@@ -37,11 +38,6 @@ export default function CameraView({
         />
 
       </div>
-
-      <p className="text-center text-gray-300 text-sm mt-3">
-        Live Camera
-      </p>
-
     </div>
   );
 }

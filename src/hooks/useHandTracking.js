@@ -1,7 +1,12 @@
 import { useEffect, useRef } from "react";
-import { Hands } from "@mediapipe/hands";
+import { Hands, HAND_CONNECTIONS } from "@mediapipe/hands";
 import { Camera } from "@mediapipe/camera_utils";
 import { COLORS } from "../utils/colors";
+import {
+  drawConnectors,
+  drawLandmarks,
+} from "@mediapipe/drawing_utils";
+
 
 export default function useHandTracking({
   videoRef,
@@ -12,7 +17,7 @@ export default function useHandTracking({
   setColor,
   setGesture,
   cameraReady,
-   saveScreenshot: handleScreenshot
+  saveScreenshot: handleScreenshot
 }) {
   const ctxRef = useRef(null);
 
@@ -55,23 +60,20 @@ export default function useHandTracking({
       const overlayCanvas =
         overlayCanvasRef?.current;
 
+      console.log("overlayCanvas", overlayCanvas);
+
       const isMobile =
         window.innerWidth < 768;
 
-      const width = isMobile
-        ? window.innerWidth - 24
-        : 1000;
+      const rect =
+        canvas.getBoundingClientRect();
 
-      const height = isMobile
-        ? window.innerHeight * 0.6
-        : 560;
-
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = rect.width;
+      canvas.height = rect.height;
 
       if (overlayCanvas) {
-        overlayCanvas.width = width;
-        overlayCanvas.height = height;
+        overlayCanvas.width = rect.width;
+        overlayCanvas.height = rect.height;
       }
     };
 
@@ -128,19 +130,27 @@ export default function useHandTracking({
       lm[16].y > lm[14].y &&
       lm[20].y > lm[18].y;
 
-      const isThumbsUp = (lm) => {
-  const thumbUp =
-    lm[4].y < lm[3].y &&
-    lm[3].y < lm[2].y;
+    const isThumbsUp = (lm) => {
+      const thumbTop =
+        lm[4].y <
+        Math.min(
+          lm[8].y,
+          lm[12].y,
+          lm[16].y,
+          lm[20].y
+        );
 
-  const fingersFolded =
-    lm[8].y > lm[5].y &&
-    lm[12].y > lm[9].y &&
-    lm[16].y > lm[13].y &&
-    lm[20].y > lm[17].y;
+      const fingersFolded =
+        lm[8].y > lm[6].y &&
+        lm[12].y > lm[10].y &&
+        lm[16].y > lm[14].y &&
+        lm[20].y > lm[18].y;
 
-  return thumbUp && fingersFolded;
-};
+      return (
+        thumbTop &&
+        fingersFolded
+      );
+    };
 
     // ==========================
     // Cursor
@@ -225,13 +235,79 @@ export default function useHandTracking({
         const hand =
           results.multiHandLandmarks[0];
 
+        const overlayCanvas =
+          overlayCanvasRef?.current;
+
+        if (overlayCanvas) {
+          const overlayCtx =
+            overlayCanvas.getContext("2d");
+
+          // Purana frame clear
+          overlayCtx.clearRect(
+            0,
+            0,
+            overlayCanvas.width,
+            overlayCanvas.height
+          );
+
+          // Hand skeleton draw
+          drawConnectors(
+            overlayCtx,
+            hand,
+            HAND_CONNECTIONS,
+            {
+              color: "#00FF00",
+              lineWidth: 3,
+            }
+          );
+
+          // Red landmark points
+          drawLandmarks(
+            overlayCtx,
+            hand,
+            {
+              color: "#FF0000",
+              radius: 4,
+              lineWidth: 1,
+            }
+          );
+
+          // Landmark numbers (0-20)
+          hand.forEach(
+            (landmark, index) => {
+              const px =
+                landmark.x *
+                overlayCanvas.width;
+
+              const py =
+                landmark.y *
+                overlayCanvas.height;
+
+              overlayCtx.fillStyle =
+                "#ffffff";
+
+              overlayCtx.font =
+                "14px Arial";
+
+              overlayCtx.fillText(
+                index,
+                px + 5,
+                py - 5
+              );
+            }
+          );
+        }
+
         const tip = hand[8];
 
+        const rect =
+          canvas.getBoundingClientRect();
+
         const x =
-          (1 - tip.x) * width;
+          (1 - tip.x) * rect.width;
 
         const y =
-          tip.y * height;
+          tip.y * rect.height;
 
         const prev =
           prevPoint.current;
@@ -242,15 +318,15 @@ export default function useHandTracking({
           prev.x === null
             ? x
             : prev.x +
-              (x - prev.x) *
-                smoothFactor;
+            (x - prev.x) *
+            smoothFactor;
 
         const smoothY =
           prev.y === null
             ? y
             : prev.y +
-              (y - prev.y) *
-                smoothFactor;
+            (y - prev.y) *
+            smoothFactor;
 
         let current =
           "Stop ✊";
@@ -259,26 +335,26 @@ export default function useHandTracking({
 
         // Screenshot Gesture 👍
 
-if (
-  isThumbsUp(hand) &&
-  now - lastScreenshotTime.current > 2000
-) {
-  current = "Screenshot 📸";
+        if (
+          isThumbsUp(hand) &&
+          now - lastScreenshotTime.current > 2000
+        ) {
+          current = "Screenshot 📸";
 
-  console.log("Screenshot Triggered");
+          console.log("Screenshot Triggered");
 
-  handleScreenshot?.();
+          handleScreenshot?.();
 
-  lastScreenshotTime.current = now;
-}
+          lastScreenshotTime.current = now;
+        }
 
         // Color Change
 
         if (
           isTwoFingersUp(hand) &&
           now -
-            lastGestureTime.current >
-            1200
+          lastGestureTime.current >
+          1200
         ) {
           const next =
             (colorIndexRef.current +
@@ -434,7 +510,7 @@ if (
 
           if (
             now -
-              lastFrameTime.current <
+            lastFrameTime.current <
             16
           ) {
             return;

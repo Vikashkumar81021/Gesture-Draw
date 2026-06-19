@@ -10,35 +10,31 @@ export default function Whiteboard({
   color,
   clearCanvas,
 }) {
-
   return (
-    <div className="relative">
+    <div className="relative w-full h-full">
 
       <canvas
         ref={canvasRef}
-        className="rounded-2xl border-4 border-gray-100 bg-white"
+        className="
+          w-full
+          h-full
+          rounded-2xl
+          border-4
+          border-gray-100
+          bg-white
+        "
       />
 
-      <Cursor
-        cursorRef={cursorRef}
-      />
+      <Cursor cursorRef={cursorRef} />
 
       <div className="absolute top-3 left-3 right-3 flex justify-between">
-
-        <GestureInfo
-          gesture={gesture}
-        />
-
-        <ColorIndicator
-          color={color}
-        />
-
+        <GestureInfo gesture={gesture} />
+        <ColorIndicator color={color} />
       </div>
 
       <ClearButton
         onClear={clearCanvas}
       />
-
     </div>
   );
 }
